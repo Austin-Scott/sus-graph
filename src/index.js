@@ -1,9 +1,29 @@
 import cytoscape from 'cytoscape'
 import edgehandles from 'cytoscape-edgehandles'
 import cxtmenu from 'cytoscape-cxtmenu'
+import popper from 'cytoscape-popper'
 
 cytoscape.use( edgehandles )
 cytoscape.use( cxtmenu )
+cytoscape.use( popper )
+
+function updateNodePopper(cy, ele) {
+    const stateText = `${ele.state.alive?'Alive':'Dead'}, ${ele.state.role}`
+
+    let popper = ele.popper({
+        content: () => {
+            let div = document.createElement('div')
+            div.innerHTML = stateText
+            document.body.appendChild(div)
+            return div
+        }
+    })
+    let update = () => {
+        popper.scheduleUpdate()
+    }
+    ele.on('position', update)
+    cy.on('pan zoom resize', update)
+}
 
 window.initialize = function initialize(container) {
     let cy = cytoscape({
@@ -11,6 +31,7 @@ window.initialize = function initialize(container) {
         layout: {
             name: 'circle',
             fit: true,
+            padding: 115,
             spacingFactor: 0.5
         },
         style: [
@@ -87,18 +108,18 @@ window.initialize = function initialize(container) {
 
         elements: {
             nodes: [
-                { data: { id: 'red', name: 'Red' } },
-                { data: { id: 'blue', name: 'Blue' } },
-                { data: { id: 'green', name: 'Green' } },
-                { data: { id: 'pink', name: 'Pink' } },
-                { data: { id: 'orange', name: 'Orange' } },
-                { data: { id: 'yellow', name: 'Yellow' } },
-                { data: { id: 'black', name: 'Black' } },
-                { data: { id: 'white', name: 'White' } },
-                { data: { id: 'purple', name: 'Purple' } },
-                { data: { id: 'brown', name: 'Brown' } },
-                { data: { id: 'cyan', name: 'Cyan' } },
-                { data: { id: 'lime', name: 'Lime' } }
+                { data: { id: 'red' } },
+                { data: { id: 'blue' } },
+                { data: { id: 'green' } },
+                { data: { id: 'pink' } },
+                { data: { id: 'orange' } },
+                { data: { id: 'yellow' } },
+                { data: { id: 'black' } },
+                { data: { id: 'white' } },
+                { data: { id: 'purple' } },
+                { data: { id: 'brown' } },
+                { data: { id: 'cyan' } },
+                { data: { id: 'lime' } }
             ],
             edges: [
             ]
@@ -120,10 +141,102 @@ window.initialize = function initialize(container) {
     cy.nodes('[id = "cyan"]').style('background-color', '#38fedb')
     cy.nodes('[id = "lime"]').style('background-color', '#50ef39')
 
+    cy.nodes().forEach(node => {
+        node.state = {
+            alive: true,
+            role: 'unknown'
+        }
+    })
+
     cy.cxtmenu({
         selector: 'node',
         commands: [
-            
+            {
+                content: 'Mark Dead',
+                select: function(ele) {
+                    if(ele.state) {
+                        ele.state.alive = false
+                        updateNodePopper(cy, ele)
+                    }
+                }
+            },
+            {
+                content: 'Mark imposter',
+                select: function(ele) {
+                    if(ele.state) {
+                        ele.state.role = 'imposter'
+                        updateNodePopper(cy, ele)
+                    }
+                }
+            },
+            {
+                content: 'Mark crewmate',
+                select: function(ele) {
+                    if(ele.state) {
+                        ele.state.role = 'crewmate'
+                        updateNodePopper(cy, ele)
+                    }
+                }
+            },
+            {
+                content: 'Mark unknown',
+                select: function(ele) {
+                    if(ele.state) {
+                        ele.state.role = 'unknown'
+                        updateNodePopper(cy, ele)
+                    }
+                }
+            },
+            {
+                content: 'Delete',
+                select: function(ele) {
+                    if(ele.state) {
+                        cy.remove(ele)
+                    }
+                }
+            }
+        ]
+    })
+
+    cy.cxtmenu({
+        selector: 'edge',
+        commands: [
+            {
+                content: 'Sus',
+                select: function(ele) {
+
+                }
+            },
+            {
+                content: 'Saw kill/vent',
+                select: function(ele) {
+
+                }
+            },
+            {
+                content: 'Saw fake task',
+                select: function(ele) {
+
+                }
+            },
+            {
+                content: 'Not sus',
+                select: function(ele) {
+
+                }
+            },
+            {
+                content: 'Visually confirmed not sus',
+                select: function(ele) {
+
+                }
+            },
+            {
+                content: 'Delete',
+                select: function(ele) {
+                    cy.remove(ele)
+                }
+            }
         ]
     })
 

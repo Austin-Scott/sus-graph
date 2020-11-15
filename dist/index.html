@@ -41,7 +41,13 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var cy = window.initialize(document.getElementById('cy'))
-            var eh = cy.edgehandles()
+            var eh = cy.edgehandles({
+                hoverDelay: 50,
+                snap: true,
+                handlePosition: function(node){
+                    return 'right top'
+                }
+            })
 
             document.querySelector('#start').addEventListener('click', function () {
                 eh.start(cy.$('node:selected'));
