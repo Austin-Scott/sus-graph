@@ -1,28 +1,67 @@
 import cytoscape from 'cytoscape'
 import edgehandles from 'cytoscape-edgehandles'
 import cxtmenu from 'cytoscape-cxtmenu'
+import PopperJs from 'popper.js'
 import popper from 'cytoscape-popper'
+import tippy from 'tippy.js'
 
-cytoscape.use( edgehandles )
-cytoscape.use( cxtmenu )
-cytoscape.use( popper )
+cytoscape.use(edgehandles)
+cytoscape.use(cxtmenu)
+cytoscape.use(popper)
 
-function updateNodePopper(cy, ele) {
-    const stateText = `${ele.state.alive?'Alive':'Dead'}, ${ele.state.role}`
+function makeTippy(node, text) {
+    var ref = node.popperRef()
+    // unfortunately, a dummy element must be passed
+    // as tippy only accepts a dom element as the target
+    // https://github.com/atomiks/tippyjs/issues/661
+    var dummyDomEle = document.createElement('div');
 
-    let popper = ele.popper({
-        content: () => {
-            let div = document.createElement('div')
-            div.innerHTML = stateText
-            document.body.appendChild(div)
-            return div
-        }
+    var tip = tippy(dummyDomEle, {
+        onCreate: function (instance) { // mandatory
+            // patch the tippy's popper reference so positioning works
+            // https://atomiks.github.io/tippyjs/misc/#custom-position
+            instance.popperInstance.reference = ref;
+        },
+        lazy: false, // mandatory
+        trigger: 'manual', // mandatory
+
+        // dom element inside the tippy:
+        content: function () { // function can be better for performance
+            var div = document.createElement('div');
+
+            div.innerHTML = text;
+
+            return div;
+        },
+
+        // your own preferences:
+        arrow: true,
+        placement: 'bottom',
+        hideOnClick: false,
+        multiple: true,
+        sticky: true,
+
+        // if interactive:
+        interactive: true,
+        appendTo: document.body // or append dummyDomEle to document.body
     })
-    let update = () => {
-        popper.scheduleUpdate()
+
+    return tip
+}
+
+function setOrUpdateNodeTooltip(cy, ele) {
+    const stateText = `${ele.state.alive?'Alive':'Dead'}, ${ele.state.role}`
+    const node = cy.getElementById(ele.data('id'))
+    if(ele.tippy == undefined) {
+        ele.tippy = makeTippy(node, stateText)
+        ele.tippy.show()
+    } else {
+
     }
-    ele.on('position', update)
-    cy.on('pan zoom resize', update)
+}
+
+function removeNodeTooltipIfNeeded(ele) {
+
 }
 
 window.initialize = function initialize(container) {
@@ -153,44 +192,45 @@ window.initialize = function initialize(container) {
         commands: [
             {
                 content: 'Mark Dead',
-                select: function(ele) {
-                    if(ele.state) {
+                select: function (ele) {
+                    if (ele.state) {
                         ele.state.alive = false
-                        updateNodePopper(cy, ele)
+                        setOrUpdateNodeTooltip(cy, ele)
                     }
                 }
             },
             {
                 content: 'Mark imposter',
-                select: function(ele) {
-                    if(ele.state) {
+                select: function (ele) {
+                    if (ele.state) {
                         ele.state.role = 'imposter'
-                        updateNodePopper(cy, ele)
+                        setOrUpdateNodeTooltip(cy, ele)
                     }
                 }
             },
             {
                 content: 'Mark crewmate',
-                select: function(ele) {
-                    if(ele.state) {
+                select: function (ele) {
+                    if (ele.state) {
                         ele.state.role = 'crewmate'
-                        updateNodePopper(cy, ele)
+                        setOrUpdateNodeTooltip(cy, ele)
                     }
                 }
             },
             {
                 content: 'Mark unknown',
-                select: function(ele) {
-                    if(ele.state) {
+                select: function (ele) {
+                    if (ele.state) {
                         ele.state.role = 'unknown'
-                        updateNodePopper(cy, ele)
+                        setOrUpdateNodeTooltip(cy, ele)
                     }
                 }
             },
             {
                 content: 'Delete',
-                select: function(ele) {
-                    if(ele.state) {
+                select: function (ele) {
+                    if (ele.state) {
+                        removeNodeTooltipIfNeeded(ele)
                         cy.remove(ele)
                     }
                 }
@@ -203,37 +243,37 @@ window.initialize = function initialize(container) {
         commands: [
             {
                 content: 'Sus',
-                select: function(ele) {
+                select: function (ele) {
 
                 }
             },
             {
                 content: 'Saw kill/vent',
-                select: function(ele) {
+                select: function (ele) {
 
                 }
             },
             {
                 content: 'Saw fake task',
-                select: function(ele) {
+                select: function (ele) {
 
                 }
             },
             {
                 content: 'Not sus',
-                select: function(ele) {
+                select: function (ele) {
 
                 }
             },
             {
                 content: 'Visually confirmed not sus',
-                select: function(ele) {
+                select: function (ele) {
 
                 }
             },
             {
                 content: 'Delete',
-                select: function(ele) {
+                select: function (ele) {
                     cy.remove(ele)
                 }
             }
