@@ -7,9 +7,53 @@
 
     <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
 
-    <script src="main.js"></script>
-
+    <script src="https://unpkg.com/popper.js@1.16.0/dist/umd/popper.js"></script>
+    <script src="https://unpkg.com/tippy.js@5.2.1/dist/tippy-bundle.iife.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/tippy.js@5.2.1/dist/tippy.css" />
+
+    <script>
+        function makeTippy(node, text) {
+            var ref = node.popperRef()
+            // unfortunately, a dummy element must be passed
+            // as tippy only accepts a dom element as the target
+            // https://github.com/atomiks/tippyjs/issues/661
+            var dummyDomEle = document.createElement('div');
+
+            var tip = tippy(dummyDomEle, {
+                onCreate: function (instance) { // mandatory
+                    // patch the tippy's popper reference so positioning works
+                    // https://atomiks.github.io/tippyjs/misc/#custom-position
+                    instance.popperInstance.reference = ref;
+                },
+                lazy: false, // mandatory
+                trigger: 'manual', // mandatory
+
+                // dom element inside the tippy:
+                content: function () { // function can be better for performance
+                    var div = document.createElement('div');
+
+                    div.innerHTML = text;
+
+                    return div;
+                },
+
+                // your own preferences:
+                arrow: true,
+                placement: 'bottom',
+                hideOnClick: false,
+                multiple: true,
+                sticky: true,
+
+                // if interactive:
+                interactive: true,
+                appendTo: document.body // or append dummyDomEle to document.body
+            })
+
+            return tip
+        }
+    </script>
+
+    <script src="main.js"></script>
 
     <style>
         body {
@@ -40,8 +84,8 @@
         }
 
         .tippy-popper {
-			transition: none !important;
-		}
+            transition: none !important;
+        }
     </style>
 
     <script>
@@ -50,7 +94,7 @@
             var eh = cy.edgehandles({
                 hoverDelay: 50,
                 snap: true,
-                handlePosition: function(node){
+                handlePosition: function (node) {
                     return 'right top'
                 }
             })

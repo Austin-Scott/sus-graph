@@ -1,56 +1,15 @@
 import cytoscape from 'cytoscape'
 import edgehandles from 'cytoscape-edgehandles'
 import cxtmenu from 'cytoscape-cxtmenu'
-import PopperJs from 'popper.js'
 import popper from 'cytoscape-popper'
-import tippy from 'tippy.js'
 
 cytoscape.use(edgehandles)
 cytoscape.use(cxtmenu)
 cytoscape.use(popper)
 
-function makeTippy(node, text) {
-    var ref = node.popperRef()
-    // unfortunately, a dummy element must be passed
-    // as tippy only accepts a dom element as the target
-    // https://github.com/atomiks/tippyjs/issues/661
-    var dummyDomEle = document.createElement('div');
-
-    var tip = tippy(dummyDomEle, {
-        onCreate: function (instance) { // mandatory
-            // patch the tippy's popper reference so positioning works
-            // https://atomiks.github.io/tippyjs/misc/#custom-position
-            instance.popperInstance.reference = ref;
-        },
-        lazy: false, // mandatory
-        trigger: 'manual', // mandatory
-
-        // dom element inside the tippy:
-        content: function () { // function can be better for performance
-            var div = document.createElement('div');
-
-            div.innerHTML = text;
-
-            return div;
-        },
-
-        // your own preferences:
-        arrow: true,
-        placement: 'bottom',
-        hideOnClick: false,
-        multiple: true,
-        sticky: true,
-
-        // if interactive:
-        interactive: true,
-        appendTo: document.body // or append dummyDomEle to document.body
-    })
-
-    return tip
-}
 
 function setOrUpdateNodeTooltip(cy, ele) {
-    const stateText = `${ele.state.alive?'Alive':'Dead'}, ${ele.state.role}`
+    const stateText = `${ele.state.alive?'':'Dead, '}${ele.state.role}`
     const node = cy.getElementById(ele.data('id'))
     if(ele.tippy == undefined) {
         ele.tippy = makeTippy(node, stateText)
