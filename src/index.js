@@ -1,7 +1,9 @@
 import cytoscape from 'cytoscape'
 import edgehandles from 'cytoscape-edgehandles'
+import cxtmenu from 'cytoscape-cxtmenu'
 
 cytoscape.use( edgehandles )
+cytoscape.use( cxtmenu )
 
 window.initialize = function initialize(container) {
     let cy = cytoscape({
@@ -103,20 +105,27 @@ window.initialize = function initialize(container) {
         }
     })
 
-    cy.nodes('[id = "red"]').style('background-color', 'red')
-    cy.nodes('[id = "blue"]').style('background-color', 'blue')
-    cy.nodes('[id = "green"]').style('background-color', 'green')
-    cy.nodes('[id = "pink"]').style('background-color', 'pink')
-    cy.nodes('[id = "orange"]').style('background-color', 'orange')
-    cy.nodes('[id = "yellow"]').style('background-color', 'yellow')
-    cy.nodes('[id = "black"]').style('background-color', 'black')
-    cy.nodes('[id = "white"]').style('background-color', 'white')
+    cy.nodes('[id = "red"]').style('background-color', '#c51111')
+    cy.nodes('[id = "blue"]').style('background-color', '#132ed1')
+    cy.nodes('[id = "green"]').style('background-color', '#117f2d')
+    cy.nodes('[id = "pink"]').style('background-color', '#ed54ba')
+    cy.nodes('[id = "orange"]').style('background-color', '#ef7d0e')
+    cy.nodes('[id = "yellow"]').style('background-color', '#F6F658')
+    cy.nodes('[id = "black"]').style('background-color', '#3f474e')
+    cy.nodes('[id = "white"]').style('background-color', '#d6e0f0')
     cy.nodes('[id = "white"]').style('border-color', 'black')
     cy.nodes('[id = "white"]').style('border-width', '1')
-    cy.nodes('[id = "purple"]').style('background-color', 'purple')
-    cy.nodes('[id = "brown"]').style('background-color', 'brown')
-    cy.nodes('[id = "cyan"]').style('background-color', 'cyan')
-    cy.nodes('[id = "lime"]').style('background-color', 'lime')
+    cy.nodes('[id = "purple"]').style('background-color', '#6b31bc')
+    cy.nodes('[id = "brown"]').style('background-color', '#71491e')
+    cy.nodes('[id = "cyan"]').style('background-color', '#38fedb')
+    cy.nodes('[id = "lime"]').style('background-color', '#50ef39')
+
+    cy.cxtmenu({
+        selector: 'node',
+        commands: [
+            
+        ]
+    })
 
     return cy
 }
