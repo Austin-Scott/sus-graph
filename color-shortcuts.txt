@@ -1,0 +1,19 @@
+// Color key codes
+red - r
+blue - b
+green - g
+orange - o
+yellow - y
+white - w
+cyan - c
+lime - l
+
+pink - i
+black - a
+purple - u
+brown - n
+
+// Commands
+(Type any two colors to join sus line between them)
+x - list of colors - x (Delete all colors that have not been interacted with and are not in your specified list of colors)
+f (undo last sus line created)
