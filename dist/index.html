@@ -96,6 +96,9 @@
                 snap: true,
                 handlePosition: function (node) {
                     return 'right top'
+                },
+                complete: function(source, target, ele){
+                    window.onEdgeAdd(ele)
                 }
             })
 

@@ -25,7 +25,45 @@ function setOrUpdateNodeTooltip(cy, ele) {
 }
 
 function removeNodeTooltipIfNeeded(ele) {
+    if(ele.tippy != undefined) {
+        ele.tippy.destroy()
+    }
+}
 
+function setOrUpdateEdgeTooltip(ele, sus, reason) {
+    let state = {
+        sus: sus,
+        reason: reason
+    }
+    const stateText = state.reason
+    if(ele.tippy != undefined) {
+        ele.tippy.destroy()
+    }
+
+    if(state.sus) {
+        ele.style('target-arrow-color', 'red')
+        ele.style('line-color', 'red')
+    } else {
+        ele.style('target-arrow-color', 'green')
+        ele.style('line-color', 'green')
+    }
+
+    if(state.reason == 'sus' || state.reason == 'not sus') {
+        return
+    }
+
+    ele.tippy = makeTippy(ele, stateText)
+    ele.tippy.show()
+}
+
+function removeEdgeTooltipIfNeeded(ele) {
+    if(ele.tippy != undefined) {
+        ele.tippy.destroy()
+    }
+}
+
+window.onEdgeAdd = function onEdgeAdd(ele) {
+    
 }
 
 window.initialize = function initialize(container) {
@@ -49,7 +87,9 @@ window.initialize = function initialize(container) {
                 selector: 'edge',
                 style: {
                     'curve-style': 'bezier',
-                    'target-arrow-shape': 'triangle'
+                    'target-arrow-shape': 'triangle',
+                    'line-color': 'red',
+                    'target-arrow-color': 'red'
                 }
             },
 
@@ -208,36 +248,43 @@ window.initialize = function initialize(container) {
             {
                 content: 'Sus',
                 select: function (ele) {
-
+                    setOrUpdateEdgeTooltip(ele, true, 'sus')
                 }
             },
             {
                 content: 'Saw kill/vent',
                 select: function (ele) {
-
+                    setOrUpdateEdgeTooltip(ele, true, 'kill/vent')
                 }
             },
             {
                 content: 'Saw fake task',
                 select: function (ele) {
-
+                    setOrUpdateEdgeTooltip(ele, true, 'fake task')
+                }
+            },
+            {
+                content: 'Did not report body',
+                select: function (ele) {
+                    setOrUpdateEdgeTooltip(ele, true, 'did not report')
                 }
             },
             {
                 content: 'Not sus',
                 select: function (ele) {
-
+                    setOrUpdateEdgeTooltip(ele, false, 'not sus')
                 }
             },
             {
                 content: 'Visually confirmed not sus',
                 select: function (ele) {
-
+                    setOrUpdateEdgeTooltip(ele, false, 'confirmed')
                 }
             },
             {
                 content: 'Delete',
                 select: function (ele) {
+                    removeEdgeTooltipIfNeeded(ele)
                     cy.remove(ele)
                 }
             }
