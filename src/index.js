@@ -9,14 +9,19 @@ cytoscape.use(popper)
 
 
 function setOrUpdateNodeTooltip(cy, ele) {
-    const stateText = `${ele.state.alive?'':'Dead, '}${ele.state.role}`
+    let state = ele.state
+    const stateText = `${state.alive?'':'Dead, '}${state.role}`
     const node = cy.getElementById(ele.data('id'))
-    if(ele.tippy == undefined) {
-        ele.tippy = makeTippy(node, stateText)
-        ele.tippy.show()
-    } else {
-
+    if(ele.tippy != undefined) {
+        ele.tippy.destroy()
     }
+
+    if(state.alive && state.role == 'unknown') {
+        return
+    }
+
+    ele.tippy = makeTippy(node, stateText)
+    ele.tippy.show()
 }
 
 function removeNodeTooltipIfNeeded(ele) {
@@ -150,10 +155,10 @@ window.initialize = function initialize(container) {
         selector: 'node',
         commands: [
             {
-                content: 'Mark Dead',
+                content: 'Toggle Dead',
                 select: function (ele) {
                     if (ele.state) {
-                        ele.state.alive = false
+                        ele.state.alive = !ele.state.alive
                         setOrUpdateNodeTooltip(cy, ele)
                     }
                 }
