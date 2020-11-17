@@ -15,7 +15,16 @@ brown - n
 
 // Commands
 (Type any two colors to join sus line between them)
-x - list of colors - x (Delete all colors that have not been interacted with and are not in your specified list of colors)
+(Hold shift and type any two colors to join a bandwagon sus line between them)
 f (undo last sus line created)
-v (mark last sus line created as not sus)
+v (mark last sus line created as not sus) [Think "vouch"]
+V (mark last sus line as confirmed not sus)
+e (mark last sus line created as having non-definitive evidence)
+E (mark last sus line created as having definitive evidence)
+
+x - list of colors - x (Delete all colors that have not been interacted with and are not in your specified list of colors)
 k - list of colors - k (mark list of colors as dead and crewmate)
+
+m - color key (Mark color as crewmate)
+M - color key (Mark color as imposter)
+t - color key (Toggle dead for color)

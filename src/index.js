@@ -116,7 +116,7 @@ function createPlayer(colorId, cy) {
 
         },
         delete() {
-            if(this.tippy != null) {
+            if (this.tippy != null) {
                 this.tippy.destroy()
             }
             this.node.cy().remove(this.node)
@@ -189,14 +189,18 @@ function createEdge(cy, fromId, toId, id) {
             }
 
             if (sus) {
-                this.edge.style('target-arrow-color', 'red')
-                this.edge.style('line-color', 'red')
+                if (reason == 'sus' || reason == 'sus w evidence') {
+                    this.setColor('#FF0000')
+                } else if (reason == 'bandwagon') {
+                    this.setColor('#FF00FF')
+                } else {
+                    this.setColor('#000000')
+                }
             } else {
-                this.edge.style('target-arrow-color', 'green')
-                this.edge.style('line-color', 'green')
+                this.setColor('#00FF00')
             }
 
-            if (reason == 'sus' || reason == 'not sus') {
+            if (reason == 'sus' || reason == 'not sus' || reason == 'bandwagon') {
                 return
             }
 
@@ -204,20 +208,24 @@ function createEdge(cy, fromId, toId, id) {
             this.tippy.show()
 
         },
+        setColor(color) {
+            this.edge.style('target-arrow-color', color)
+            this.edge.style('line-color', color)
+        },
         changeSus(sus, reason) {
             this.sus = sus
             this.reason = reason
             this.setOrUpdateTooltip(sus, reason)
         },
         delete() {
-            this.playerFrom.outBoundEdges = this.playerFrom.outBoundEdges.filter(edge=>{
+            this.playerFrom.outBoundEdges = this.playerFrom.outBoundEdges.filter(edge => {
                 return edge.id != this.id
             })
-            this.playerTo.inBoundEdges = this.playerTo.inBoundEdges.filter(edge=>{
+            this.playerTo.inBoundEdges = this.playerTo.inBoundEdges.filter(edge => {
                 return edge.id != this.id
             })
 
-            if(this.tippy != null) {
+            if (this.tippy != null) {
                 this.tippy.destroy()
             }
 
@@ -235,13 +243,13 @@ function createEdge(cy, fromId, toId, id) {
 }
 
 function getLastEdge() {
-    if(recentEdges.length == 0) return null
-    return recentEdges[recentEdges.length-1]
+    if (recentEdges.length == 0) return null
+    return recentEdges[recentEdges.length - 1]
 }
 
 function deleteLastEdge() {
     let lastEdge = getLastEdge()
-    if(lastEdge != null) {
+    if (lastEdge != null) {
         deleteEdge(lastEdge.id)
     }
 }
@@ -455,17 +463,17 @@ window.initialize = function initialize(container) {
                 }
             },
             {
-                content: 'Saw fake task',
+                content: 'Sus w evidence',
                 select: function (ele) {
                     let edge = getEdge(ele.id())
-                    edge.changeSus(true, 'fake task')
+                    edge.changeSus(true, 'sus w evidence')
                 }
             },
             {
-                content: 'Did not report body',
+                content: 'B-wagon',
                 select: function (ele) {
                     let edge = getEdge(ele.id())
-                    edge.changeSus(true, 'did not report')
+                    edge.changeSus(true, 'bandwagon')
                 }
             },
             {
@@ -476,7 +484,7 @@ window.initialize = function initialize(container) {
                 }
             },
             {
-                content: 'Visually confirmed not sus',
+                content: 'Confirmed not sus',
                 select: function (ele) {
                     let edge = getEdge(ele.id())
                     edge.changeSus(false, 'confirmed')
@@ -499,46 +507,103 @@ let combo = []
 
 window.keyhandler = function keyhandler(cy, key) {
     let colorKeys = Object.keys(KeyboardColorShortcuts)
+    let capitalColorKeys = Object.keys(KeyboardColorShortcuts).map(key => key.toUpperCase())
 
-    if(mode == 'start') {
-        if(colorKeys.includes(key)) {
+    if (mode == 'start') {
+        if (colorKeys.includes(key)) {
             mode = 'sus'
             combo.push(key)
-        } else if(key == 'x') {
+        } else if(capitalColorKeys.includes(key)) {
+            mode = 'bandwagon'
+            combo.push(key.toLowerCase())
+        } else if (key == 'x') {
             mode = 'exclude'
-        } else if(key == 'f') {
+        } else if (key == 'f') {
             deleteLastEdge()
-        } else if(key == 'v') {
+        } else if (key == 'v') {
             let lastEdge = getLastEdge()
-            if(lastEdge != null) {
+            if (lastEdge != null) {
                 lastEdge.changeSus(false, 'not sus')
             }
-        } else if(key == 'k') {
-            mode = 'kill'
+        } else if (key == 'V') {
+            let lastEdge = getLastEdge()
+            if (lastEdge != null) {
+                lastEdge.changeSus(false, 'confirmed')
+            }
+            else if (key == 'k') {
+                mode = 'kill'
+            }
+        } else if (key == 'e') {
+            let lastEdge = getLastEdge()
+            if (lastEdge != null) {
+                lastEdge.changeSus(true, 'sus w evidence')
+            }
+        } else if (key == 'E') {
+            let lastEdge = getLastEdge()
+            if (lastEdge != null) {
+                lastEdge.changeSus(true, 'kill/vent')
+            }
         }
-    } else if(mode == 'sus') {
-        if(colorKeys.includes(key)) {
+        else if (key == 'k') {
+            mode = 'kill'
+        } else if(key == 'm') {
+            mode = 'mark crewmate'
+        } else if(key == 'M') {
+            mode = 'mark imposter'
+        } else if(key == 't') {
+            mode = 'toggle dead'
+        }
+    }
+    else if (mode == 'sus') {
+        if (colorKeys.includes(key)) {
             let playerFrom = getPlayer(KeyboardColorShortcuts[combo[0]])
             let playerTo = getPlayer(KeyboardColorShortcuts[key])
 
-            let ele = cy.add({
-                group: 'edges',
-                data: {
-                    source: playerFrom.colorId,
-                    target: playerTo.colorId
-                }
-            })
+            if(playerFrom && playerTo) {
+                let ele = cy.add({
+                    group: 'edges',
+                    data: {
+                        source: playerFrom.colorId,
+                        target: playerTo.colorId
+                    }
+                })
 
-            createEdge(cy, playerFrom.colorId, playerTo.colorId, ele.id())
+                createEdge(cy, playerFrom.colorId, playerTo.colorId, ele.id())
+            }
         }
         mode = 'start'
         combo = []
-    } else if(mode == 'exclude') {
-        if(colorKeys.includes(key)) {
+    } else if(mode == 'bandwagon') {
+        if (capitalColorKeys.includes(key)) {
+            let playerFrom = getPlayer(KeyboardColorShortcuts[combo[0]])
+            let playerTo = getPlayer(KeyboardColorShortcuts[key.toLowerCase()])
+
+            if(playerFrom && playerTo) {
+                let ele = cy.add({
+                    group: 'edges',
+                    data: {
+                        source: playerFrom.colorId,
+                        target: playerTo.colorId
+                    }
+                })
+
+                createEdge(cy, playerFrom.colorId, playerTo.colorId, ele.id())
+                getEdge(ele.id()).changeSus(true, 'bandwagon')
+            }
+
+        }
+        mode = 'start'
+        combo = []
+
+    } else if (mode == 'exclude') {
+        if (colorKeys.includes(key)) {
             combo.push(key)
-        } else if(key=='x') {
+        } else if (key == 'x') {
             combo.forEach(currentKey => {
-                getPlayer(KeyboardColorShortcuts[currentKey]).markActive()
+                let player = getPlayer(KeyboardColorShortcuts[currentKey])
+                if(player) {
+                    player.markActive()
+                }
             })
             let inactivePlayers = Object.values(Players).filter(player => {
                 return !player.active
@@ -547,28 +612,54 @@ window.keyhandler = function keyhandler(cy, key) {
                 deletePlayer(player.colorId)
             })
 
-            mode='start'
-            combo=[]
+            mode = 'start'
+            combo = []
         } else {
-            mode='start'
-            combo=[]
+            mode = 'start'
+            combo = []
         }
-    } else if(mode == 'kill') {
-        if(colorKeys.includes(key)) {
+    } else if (mode == 'kill') {
+        if (colorKeys.includes(key)) {
             combo.push(key)
-        } else if(key=='k') {
+        } else if (key == 'k') {
             combo.forEach(currentKey => {
                 let player = getPlayer(KeyboardColorShortcuts[currentKey])
-                player.markDead()
-                player.markCrewmate()
+                if(player) {
+                    player.markDead()
+                    player.markCrewmate()
+                }
             })
 
-            mode='start'
-            combo=[]
+            mode = 'start'
+            combo = []
         } else {
-            mode='start'
-            combo=[]
+            mode = 'start'
+            combo = []
         }
 
+    } else if(mode == 'mark crewmate') {
+        if(colorKeys.includes(key)) {
+            let player = getPlayer(KeyboardColorShortcuts[key])
+            if(player) {
+                player.markCrewmate()
+            }
+        }
+        mode = 'start'
+    } else if(mode == 'mark imposter') {
+        if(colorKeys.includes(key)) {
+            let player = getPlayer(KeyboardColorShortcuts[key])
+            if(player) {
+                player.markInposter()
+            }
+        }
+        mode = 'start'
+    } else if(mode == 'toggle dead') {
+        if(colorKeys.includes(key)) {
+            let player = getPlayer(KeyboardColorShortcuts[key])
+            if(player) {
+                player.toggleDead()
+            }
+        }
+        mode = 'start'
     }
 }
