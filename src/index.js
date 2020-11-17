@@ -126,6 +126,14 @@ function createPlayer(colorId, cy) {
             this.alive = !this.alive
             this.setOrUpdateTooltip()
         },
+        markDead() {
+            this.active = true
+            this.alive = false
+            this.setOrUpdateTooltip()
+        },
+        markActive() {
+            this.active = true
+        },
         markUnknown() {
             this.active = true
             this.role = 'unknown'
@@ -221,6 +229,9 @@ function createEdge(cy, fromId, toId, id) {
     recentEdges.push(edge)
     playerFrom.outBoundEdges.push(edge)
     playerTo.inBoundEdges.push(edge)
+
+    playerFrom.markActive()
+    playerTo.markActive()
 }
 
 function getLastEdge() {
@@ -481,4 +492,83 @@ window.initialize = function initialize(container) {
     })
 
     return cy
+}
+
+let mode = 'start'
+let combo = []
+
+window.keyhandler = function keyhandler(cy, key) {
+    let colorKeys = Object.keys(KeyboardColorShortcuts)
+
+    if(mode == 'start') {
+        if(colorKeys.includes(key)) {
+            mode = 'sus'
+            combo.push(key)
+        } else if(key == 'x') {
+            mode = 'exclude'
+        } else if(key == 'f') {
+            deleteLastEdge()
+        } else if(key == 'v') {
+            let lastEdge = getLastEdge()
+            if(lastEdge != null) {
+                lastEdge.changeSus(false, 'not sus')
+            }
+        } else if(key == 'k') {
+            mode = 'kill'
+        }
+    } else if(mode == 'sus') {
+        if(colorKeys.includes(key)) {
+            let playerFrom = getPlayer(KeyboardColorShortcuts[combo[0]])
+            let playerTo = getPlayer(KeyboardColorShortcuts[key])
+
+            let ele = cy.add({
+                group: 'edges',
+                data: {
+                    source: playerFrom.colorId,
+                    target: playerTo.colorId
+                }
+            })
+
+            createEdge(cy, playerFrom.colorId, playerTo.colorId, ele.id())
+        }
+        mode = 'start'
+        combo = []
+    } else if(mode == 'exclude') {
+        if(colorKeys.includes(key)) {
+            combo.push(key)
+        } else if(key=='x') {
+            combo.forEach(currentKey => {
+                getPlayer(KeyboardColorShortcuts[currentKey]).markActive()
+            })
+            let inactivePlayers = Object.values(Players).filter(player => {
+                return !player.active
+            })
+            inactivePlayers.forEach(player => {
+                deletePlayer(player.colorId)
+            })
+
+            mode='start'
+            combo=[]
+        } else {
+            mode='start'
+            combo=[]
+        }
+    } else if(mode == 'kill') {
+        if(colorKeys.includes(key)) {
+            combo.push(key)
+        } else if(key=='k') {
+            combo.forEach(currentKey => {
+                let player = getPlayer(KeyboardColorShortcuts[currentKey])
+                player.markDead()
+                player.markCrewmate()
+            })
+
+            mode='start'
+            combo=[]
+        } else {
+            mode='start'
+            combo=[]
+        }
+
+    }
 }

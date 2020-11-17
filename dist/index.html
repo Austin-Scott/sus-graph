@@ -60,8 +60,8 @@
                 }
             })
 
-            document.querySelector('#start').addEventListener('click', function () {
-                eh.start(cy.$('node:selected'));
+            window.addEventListener('keypress', function(e) {
+                window.keyhandler(cy, e.key)
             })
         })
     </script>
