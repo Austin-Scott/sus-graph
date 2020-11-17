@@ -122,18 +122,22 @@ function createPlayer(colorId, cy) {
             this.node.cy().remove(this.node)
         },
         toggleDead() {
+            this.active = true
             this.alive = !this.alive
             this.setOrUpdateTooltip()
         },
         markUnknown() {
+            this.active = true
             this.role = 'unknown'
             this.setOrUpdateTooltip()
         },
         markInposter() {
+            this.active = true
             this.role = 'imposter'
             this.setOrUpdateTooltip()
         },
         markCrewmate() {
+            this.active = true
             this.role = 'crewmate'
             this.setOrUpdateTooltip()
         }
@@ -151,6 +155,99 @@ function getPlayer(colorId) {
     return Players[colorId]
 }
 
+const Edges = {}
+let recentEdges = []
+
+// Assuming that edge is already created on map, just adding to local model
+function createEdge(cy, fromId, toId, id) {
+    let e = cy.edges(`[id = "${id}"]`)
+
+    let playerFrom = getPlayer(fromId)
+    let playerTo = getPlayer(toId)
+
+    let edge = {
+        id: id,
+        edge: e,
+        sus: true,
+        reason: 'sus',
+        playerFrom: playerFrom,
+        playerTo: playerTo,
+        tippy: null,
+
+        setOrUpdateTooltip(sus, reason) {
+            const stateText = reason
+            if (this.tippy != null) {
+                this.tippy.destroy()
+            }
+
+            if (sus) {
+                this.edge.style('target-arrow-color', 'red')
+                this.edge.style('line-color', 'red')
+            } else {
+                this.edge.style('target-arrow-color', 'green')
+                this.edge.style('line-color', 'green')
+            }
+
+            if (reason == 'sus' || reason == 'not sus') {
+                return
+            }
+
+            this.tippy = makeTippy(this.edge, stateText)
+            this.tippy.show()
+
+        },
+        changeSus(sus, reason) {
+            this.sus = sus
+            this.reason = reason
+            this.setOrUpdateTooltip(sus, reason)
+        },
+        delete() {
+            this.playerFrom.outBoundEdges = this.playerFrom.outBoundEdges.filter(edge=>{
+                return edge.id != this.id
+            })
+            this.playerTo.inBoundEdges = this.playerTo.inBoundEdges.filter(edge=>{
+                return edge.id != this.id
+            })
+
+            if(this.tippy != null) {
+                this.tippy.destroy()
+            }
+
+            this.edge.cy().remove(this.edge)
+        }
+    }
+
+    Edges[id] = edge
+    recentEdges.push(edge)
+    playerFrom.outBoundEdges.push(edge)
+    playerTo.inBoundEdges.push(edge)
+}
+
+function getLastEdge() {
+    if(recentEdges.length == 0) return null
+    return recentEdges[recentEdges.length-1]
+}
+
+function deleteLastEdge() {
+    let lastEdge = getLastEdge()
+    if(lastEdge != null) {
+        deleteEdge(lastEdge.id)
+    }
+}
+
+function getEdge(id) {
+    return Edges[id]
+}
+
+function deleteEdge(id) {
+    let edge = getEdge(id)
+    edge.delete()
+    recentEdges = recentEdges.filter(e => {
+        return e.id != id
+    })
+    Edges[id] = null
+}
+
 
 function removeElementTooltipIfNeeded(ele) {
     if (ele.tippy != undefined) {
@@ -158,34 +255,8 @@ function removeElementTooltipIfNeeded(ele) {
     }
 }
 
-function setOrUpdateEdgeTooltip(ele, sus, reason) {
-    let state = {
-        sus: sus,
-        reason: reason
-    }
-    const stateText = state.reason
-    if (ele.tippy != undefined) {
-        ele.tippy.destroy()
-    }
-
-    if (state.sus) {
-        ele.style('target-arrow-color', 'red')
-        ele.style('line-color', 'red')
-    } else {
-        ele.style('target-arrow-color', 'green')
-        ele.style('line-color', 'green')
-    }
-
-    if (state.reason == 'sus' || state.reason == 'not sus') {
-        return
-    }
-
-    ele.tippy = makeTippy(ele, stateText)
-    ele.tippy.show()
-}
-
-window.onEdgeAdd = function onEdgeAdd(ele) {
-
+window.onEdgeAdd = function onEdgeAdd(cy, source, target, ele) {
+    createEdge(cy, source.id(), target.id(), ele.id())
 }
 
 window.initialize = function initialize(container) {
@@ -361,44 +432,49 @@ window.initialize = function initialize(container) {
             {
                 content: 'Sus',
                 select: function (ele) {
-                    setOrUpdateEdgeTooltip(ele, true, 'sus')
+                    let edge = getEdge(ele.id())
+                    edge.changeSus(true, 'sus')
                 }
             },
             {
                 content: 'Saw kill/vent',
                 select: function (ele) {
-                    setOrUpdateEdgeTooltip(ele, true, 'kill/vent')
+                    let edge = getEdge(ele.id())
+                    edge.changeSus(true, 'kill/vent')
                 }
             },
             {
                 content: 'Saw fake task',
                 select: function (ele) {
-                    setOrUpdateEdgeTooltip(ele, true, 'fake task')
+                    let edge = getEdge(ele.id())
+                    edge.changeSus(true, 'fake task')
                 }
             },
             {
                 content: 'Did not report body',
                 select: function (ele) {
-                    setOrUpdateEdgeTooltip(ele, true, 'did not report')
+                    let edge = getEdge(ele.id())
+                    edge.changeSus(true, 'did not report')
                 }
             },
             {
                 content: 'Not sus',
                 select: function (ele) {
-                    setOrUpdateEdgeTooltip(ele, false, 'not sus')
+                    let edge = getEdge(ele.id())
+                    edge.changeSus(false, 'not sus')
                 }
             },
             {
                 content: 'Visually confirmed not sus',
                 select: function (ele) {
-                    setOrUpdateEdgeTooltip(ele, false, 'confirmed')
+                    let edge = getEdge(ele.id())
+                    edge.changeSus(false, 'confirmed')
                 }
             },
             {
                 content: 'Delete',
                 select: function (ele) {
-                    removeElementTooltipIfNeeded(ele)
-                    cy.remove(ele)
+                    deleteEdge(ele.id())
                 }
             }
         ]
