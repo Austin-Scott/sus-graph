@@ -8,10 +8,9 @@ cytoscape.use(cxtmenu)
 cytoscape.use(popper)
 
 
-function setOrUpdateNodeTooltip(cy, ele) {
+function setOrUpdateNodeTooltip(ele) {
     let state = ele.state
     const stateText = `${state.alive?'':'Dead, '}${state.role}`
-    const node = cy.getElementById(ele.data('id'))
     if(ele.tippy != undefined) {
         ele.tippy.destroy()
     }
@@ -20,11 +19,11 @@ function setOrUpdateNodeTooltip(cy, ele) {
         return
     }
 
-    ele.tippy = makeTippy(node, stateText)
+    ele.tippy = makeTippy(ele, stateText)
     ele.tippy.show()
 }
 
-function removeNodeTooltipIfNeeded(ele) {
+function removeElementTooltipIfNeeded(ele) {
     if(ele.tippy != undefined) {
         ele.tippy.destroy()
     }
@@ -54,12 +53,6 @@ function setOrUpdateEdgeTooltip(ele, sus, reason) {
 
     ele.tippy = makeTippy(ele, stateText)
     ele.tippy.show()
-}
-
-function removeEdgeTooltipIfNeeded(ele) {
-    if(ele.tippy != undefined) {
-        ele.tippy.destroy()
-    }
 }
 
 window.onEdgeAdd = function onEdgeAdd(ele) {
@@ -199,7 +192,7 @@ window.initialize = function initialize(container) {
                 select: function (ele) {
                     if (ele.state) {
                         ele.state.alive = !ele.state.alive
-                        setOrUpdateNodeTooltip(cy, ele)
+                        setOrUpdateNodeTooltip(ele)
                     }
                 }
             },
@@ -208,7 +201,7 @@ window.initialize = function initialize(container) {
                 select: function (ele) {
                     if (ele.state) {
                         ele.state.role = 'imposter'
-                        setOrUpdateNodeTooltip(cy, ele)
+                        setOrUpdateNodeTooltip(ele)
                     }
                 }
             },
@@ -217,7 +210,7 @@ window.initialize = function initialize(container) {
                 select: function (ele) {
                     if (ele.state) {
                         ele.state.role = 'crewmate'
-                        setOrUpdateNodeTooltip(cy, ele)
+                        setOrUpdateNodeTooltip(ele)
                     }
                 }
             },
@@ -226,7 +219,7 @@ window.initialize = function initialize(container) {
                 select: function (ele) {
                     if (ele.state) {
                         ele.state.role = 'unknown'
-                        setOrUpdateNodeTooltip(cy, ele)
+                        setOrUpdateNodeTooltip(ele)
                     }
                 }
             },
@@ -234,7 +227,7 @@ window.initialize = function initialize(container) {
                 content: 'Delete',
                 select: function (ele) {
                     if (ele.state) {
-                        removeNodeTooltipIfNeeded(ele)
+                        removeElementTooltipIfNeeded(ele)
                         cy.remove(ele)
                     }
                 }
@@ -284,7 +277,7 @@ window.initialize = function initialize(container) {
             {
                 content: 'Delete',
                 select: function (ele) {
-                    removeEdgeTooltipIfNeeded(ele)
+                    removeElementTooltipIfNeeded(ele)
                     cy.remove(ele)
                 }
             }
