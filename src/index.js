@@ -683,7 +683,9 @@ window.keyhandler = function keyhandler(cy, key) {
                 let player = getPlayer(KeyboardColorShortcuts[currentKey])
                 if(player) {
                     player.markDead()
-                    player.markCrewmate()
+                    if(player.role == 'unknown') {
+                        player.markCrewmate()
+                    }
                 }
             })
 
