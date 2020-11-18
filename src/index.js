@@ -273,7 +273,7 @@ function computeSusLevels() {
         if(!player) return false
         if(!player.active) return false
         if(!player.alive) return false
-        if(!player.role == 'crewmate') return false
+        if(player.role == 'crewmate') return false
 
         return true
     })
