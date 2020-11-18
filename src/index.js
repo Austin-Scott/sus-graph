@@ -50,7 +50,7 @@ function makeTippy(node, text) {
 
 const KeyboardColorShortcuts = {
     r: 'red',
-    b: 'blue',
+    b: 'black',
     g: 'green',
     o: 'orange',
     y: 'yellow',
@@ -58,8 +58,8 @@ const KeyboardColorShortcuts = {
     c: 'cyan',
     l: 'lime',
     i: 'pink',
-    a: 'black',
-    u: 'purple',
+    u: 'blue',
+    p: 'purple',
     n: 'brown'
 }
 
