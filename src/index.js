@@ -125,11 +125,13 @@ function createPlayer(colorId, cy) {
             this.active = true
             this.alive = !this.alive
             this.setOrUpdateTooltip()
+            computeSusLevels()
         },
         markDead() {
             this.active = true
             this.alive = false
             this.setOrUpdateTooltip()
+            computeSusLevels()
         },
         markActive() {
             this.active = true
@@ -138,16 +140,19 @@ function createPlayer(colorId, cy) {
             this.active = true
             this.role = 'unknown'
             this.setOrUpdateTooltip()
+            computeSusLevels()
         },
         markInposter() {
             this.active = true
             this.role = 'imposter'
             this.setOrUpdateTooltip()
+            computeSusLevels()
         },
         markCrewmate() {
             this.active = true
             this.role = 'crewmate'
             this.setOrUpdateTooltip()
+            computeSusLevels()
         }
     }
 
@@ -157,6 +162,7 @@ function createPlayer(colorId, cy) {
 function deletePlayer(colorId) {
     getPlayer(colorId).delete()
     Players[colorId] = null
+    computeSusLevels()
 }
 
 function getPlayer(colorId) {
@@ -177,6 +183,7 @@ function createEdge(cy, fromId, toId, id) {
         id: id,
         edge: e,
         sus: true,
+        susLevel: 1,
         reason: 'sus',
         playerFrom: playerFrom,
         playerTo: playerTo,
@@ -212,10 +219,12 @@ function createEdge(cy, fromId, toId, id) {
             this.edge.style('target-arrow-color', color)
             this.edge.style('line-color', color)
         },
-        changeSus(sus, reason) {
+        changeSus(sus, reason, level) {
             this.sus = sus
             this.reason = reason
+            this.susLevel = level
             this.setOrUpdateTooltip(sus, reason)
+            computeSusLevels()
         },
         delete() {
             this.playerFrom.outBoundEdges = this.playerFrom.outBoundEdges.filter(edge => {
@@ -240,6 +249,7 @@ function createEdge(cy, fromId, toId, id) {
 
     playerFrom.markActive()
     playerTo.markActive()
+    computeSusLevels()
 }
 
 function getLastEdge() {
@@ -258,6 +268,58 @@ function getEdge(id) {
     return Edges[id]
 }
 
+function computeSusLevels() {
+    let candidates = Object.values(Players).filter(player => {
+        if(!player) return false
+        if(!player.active) return false
+        if(!player.alive) return false
+
+        return true
+    })
+    let results = candidates.map(player => {
+        let susLevel = player.inBoundEdges.reduce((sum, edge)=>{
+            let playerFrom = edge.playerFrom
+            if(playerFrom.role == 'unknown') {
+                return sum+edge.susLevel
+            } else if(playerFrom.role == 'crewmate') {
+                return sum+(2*edge.susLevel)
+            } else {
+                if(edge.sus) {
+                    return sum-edge.susLevel
+                } else {
+                    return sum-(0.5*edge.susLevel)
+                }
+            }
+        }, 0)
+        susLevel += player.outBoundEdges.reduce((sum, edge)=>{
+            let playerTo = edge.playerTo
+            if(playerTo.role == 'unknown') {
+                if(edge.sus) {
+                    return sum+(0.5*edge.susLevel)
+                } else {
+                    return sum+(0.25*edge.susLevel)
+                }
+            } else if(playerTo.role == 'crewmate') {
+                if(edge.sus) {
+                    return sum+(2*edge.susLevel)
+                } else {
+                    return sum+(0.3*edge.susLevel)
+                }
+            } else {
+                return sum-edge.susLevel
+            }
+        }, 0)
+        return {
+            color: player.colorId,
+            susLevel: susLevel
+        }
+    })
+    results.sort((a, b)=>b.susLevel-a.susLevel)
+    
+    let susList = document.getElementById('susList')
+    susList.innerHTML = `<strong>Most suspicious colors:</strong><ol>${results.reduce((a, result)=>a+`<li>${result.color}</li>`, '')}</ol>`
+}
+
 function deleteEdge(id) {
     let edge = getEdge(id)
     edge.delete()
@@ -265,13 +327,7 @@ function deleteEdge(id) {
         return e.id != id
     })
     Edges[id] = null
-}
-
-
-function removeElementTooltipIfNeeded(ele) {
-    if (ele.tippy != undefined) {
-        ele.tippy.destroy()
-    }
+    computeSusLevels()
 }
 
 window.onEdgeAdd = function onEdgeAdd(cy, source, target, ele) {
@@ -452,42 +508,42 @@ window.initialize = function initialize(container) {
                 content: 'Sus',
                 select: function (ele) {
                     let edge = getEdge(ele.id())
-                    edge.changeSus(true, 'sus')
+                    edge.changeSus(true, 'sus', 1)
                 }
             },
             {
                 content: 'Saw kill/vent',
                 select: function (ele) {
                     let edge = getEdge(ele.id())
-                    edge.changeSus(true, 'kill/vent')
+                    edge.changeSus(true, 'kill/vent', 5)
                 }
             },
             {
                 content: 'Sus w evidence',
                 select: function (ele) {
                     let edge = getEdge(ele.id())
-                    edge.changeSus(true, 'sus w evidence')
+                    edge.changeSus(true, 'sus w evidence', 2)
                 }
             },
             {
                 content: 'B-wagon',
                 select: function (ele) {
                     let edge = getEdge(ele.id())
-                    edge.changeSus(true, 'bandwagon')
+                    edge.changeSus(true, 'bandwagon', 1)
                 }
             },
             {
                 content: 'Not sus',
                 select: function (ele) {
                     let edge = getEdge(ele.id())
-                    edge.changeSus(false, 'not sus')
+                    edge.changeSus(false, 'not sus', -1)
                 }
             },
             {
                 content: 'Confirmed not sus',
                 select: function (ele) {
                     let edge = getEdge(ele.id())
-                    edge.changeSus(false, 'confirmed')
+                    edge.changeSus(false, 'confirmed', -5)
                 }
             },
             {
@@ -523,12 +579,12 @@ window.keyhandler = function keyhandler(cy, key) {
         } else if (key == 'v') {
             let lastEdge = getLastEdge()
             if (lastEdge != null) {
-                lastEdge.changeSus(false, 'not sus')
+                lastEdge.changeSus(false, 'not sus', -1)
             }
         } else if (key == 'V') {
             let lastEdge = getLastEdge()
             if (lastEdge != null) {
-                lastEdge.changeSus(false, 'confirmed')
+                lastEdge.changeSus(false, 'confirmed', -5)
             }
             else if (key == 'k') {
                 mode = 'kill'
@@ -536,12 +592,12 @@ window.keyhandler = function keyhandler(cy, key) {
         } else if (key == 'e') {
             let lastEdge = getLastEdge()
             if (lastEdge != null) {
-                lastEdge.changeSus(true, 'sus w evidence')
+                lastEdge.changeSus(true, 'sus w evidence', 2)
             }
         } else if (key == 'E') {
             let lastEdge = getLastEdge()
             if (lastEdge != null) {
-                lastEdge.changeSus(true, 'kill/vent')
+                lastEdge.changeSus(true, 'kill/vent', 5)
             }
         }
         else if (key == 'k') {
@@ -588,7 +644,7 @@ window.keyhandler = function keyhandler(cy, key) {
                 })
 
                 createEdge(cy, playerFrom.colorId, playerTo.colorId, ele.id())
-                getEdge(ele.id()).changeSus(true, 'bandwagon')
+                getEdge(ele.id()).changeSus(true, 'bandwagon', 1)
             }
 
         }
